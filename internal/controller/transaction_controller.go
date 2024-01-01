@@ -55,6 +55,14 @@ func (controller TransactionControllerImpl) GetTransactionById(ctx *gin.Context)
 }
 
 func (controller TransactionControllerImpl) GetAllTransaction(ctx *gin.Context) {
-	//TODO implement me
-	panic("implement me")
+	billsResponse, err := controller.transactionService.GetAllTransaction(ctx)
+	helper.PanicIfError(err)
+
+	response := dto.Response{
+		Code:   http.StatusOK,
+		Status: "OK",
+		Data:   billsResponse,
+	}
+
+	ctx.JSON(http.StatusOK, response)
 }

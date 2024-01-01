@@ -12,7 +12,7 @@ type TransactionRepository interface {
 	InsertBill(ctx context.Context, tx *sql.Tx, bill domain.TxBill) (domain.TxBill, error)
 	InsertBillDetail(ctx context.Context, tx *sql.Tx, billDetail []domain.TxBillDetail) ([]domain.TxBillDetail, error)
 	GetById(ctx context.Context, tx *sql.Tx, id string) (dto.GetBillByIdResponse, error)
-	GetAll(ctx context.Context, tx *sql.Tx) ([]domain.TxBill, []domain.TxBillDetail, error)
+	GetAll(ctx context.Context, tx *sql.Tx) ([]dto.GetBillByIdResponse, error)
 }
 
 type TransactionRepositoryImpl struct {
@@ -127,40 +127,82 @@ func (repository *TransactionRepositoryImpl) GetById(ctx context.Context, tx *sq
 
 }
 
-func (repository *TransactionRepositoryImpl) GetAll(ctx context.Context, tx *sql.Tx) ([]domain.TxBill, []domain.TxBillDetail, error) {
-	sqlGetAllBill := "select id, bill_date, entry_date, finish_date, employee_id, customer_id, total_bill from tx_bill"
+func (repository *TransactionRepositoryImpl) GetAll(ctx context.Context, tx *sql.Tx) ([]dto.GetBillByIdResponse, error) {
+	sqlGetAllBill := `
+	select b.id, b.bill_date, b.entry_date, b.finish_date, b.total_bill, c.id, c.name, c.phone_number, c.address, 
+	e.id, e.name, e.phone_number, e.address
+	
+	from tx_bill as b 
+	join 
+		mst_customer as c on b.customer_id = c.id
+	join 
+		mst_employee as e on b.employee_id = e.id
+	`
 
-	rows, err := tx.QueryContext(ctx, sqlGetAllBill)
+	rowsBill, err := tx.QueryContext(ctx, sqlGetAllBill)
 	if err != nil {
-		return nil, nil, err
+		fmt.Println("error query rowsBill: ", err)
+		return nil, err
 	}
 
-	var bills []domain.TxBill
-	for rows.Next() {
-		var bill domain.TxBill
-		err := rows.Scan(&bill.Id, &bill.BillDate, &bill.EntryDate, &bill.FinishDate, &bill.EmployeeId, &bill.CustomerId, &bill.TotalBill)
+	var bills []dto.GetBillByIdResponse
+	for rowsBill.Next() {
+		var bill dto.GetBillByIdResponse
+		var customer dto.CustomerResponse
+		var employee dto.EmployeeResponse
+
+		err := rowsBill.Scan(&bill.Id, &bill.BillDate, &bill.EntryDate, &bill.FinishDate, &bill.TotalBill, &customer.Id, &customer.Name, &customer.PhoneNumber, &customer.Address, &employee.Id, &employee.Name, &employee.PhoneNumber, &employee.Address)
+
 		if err != nil {
-			return nil, nil, err
+			return nil, err
 		}
+		bill = dto.GetBillByIdResponse{
+			Id:         bill.Id,
+			BillDate:   bill.BillDate,
+			EntryDate:  bill.EntryDate,
+			FinishDate: bill.FinishDate,
+			Employee:   employee,
+			Customer:   customer,
+			TotalBill:  bill.TotalBill,
+		}
+
 		bills = append(bills, bill)
 	}
 
-	sqlGetAllBillDetail := "select id, bill_id, product_id, quantity, product_price from tx_bill_detail"
+	for i, bill := range bills {
+		sqlBillDetail := `
+					select bd.id, bd.bill_id, bd.quantity, bd.product_price, p.id, p.name, p.unit, p.price
+					from 
+						tx_bill_detail as bd 
+					join 
+						mst_product as p on bd.product_id = p.id
+					where bd.bill_id = $1
+				`
 
-	rows, err = tx.QueryContext(ctx, sqlGetAllBillDetail)
-	if err != nil {
-		return nil, nil, err
-	}
-
-	var billDetails []domain.TxBillDetail
-	for rows.Next() {
-		var billDetail domain.TxBillDetail
-		err := rows.Scan(&billDetail.Id, &billDetail.BillId, &billDetail.ProductId, &billDetail.Quantity, &billDetail.ProductPrice)
+		rowsBillDetail, err := tx.QueryContext(ctx, sqlBillDetail, bill.Id)
 		if err != nil {
-			return nil, nil, err
+			return nil, err
 		}
-		billDetails = append(billDetails, billDetail)
+
+		var billDetails []dto.GetBillDetailByIdResponse
+		for rowsBillDetail.Next() {
+			var (
+				billDetail dto.GetBillDetailByIdResponse
+				product    dto.ProductResponse
+			)
+
+			err := rowsBillDetail.Scan(&billDetail.Id, &billDetail.BillId, &billDetail.Quantity, &billDetail.ProductPrice, &product.Id, &product.Name, &product.Unit, &product.Price)
+			if err != nil {
+				return nil, err
+			}
+
+			billDetail.Product = product
+
+			billDetails = append(billDetails, billDetail)
+		}
+
+		bills[i].BillDetail = billDetails
 	}
 
-	return bills, billDetails, nil
+	return bills, nil
 }

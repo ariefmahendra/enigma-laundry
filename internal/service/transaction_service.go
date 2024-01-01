@@ -117,6 +117,16 @@ func (service *TransactionServiceImpl) GetTransactionById(ctx context.Context, i
 }
 
 func (service *TransactionServiceImpl) GetAllTransaction(ctx context.Context) ([]dto.GetBillByIdResponse, error) {
-	//"TODO implement me"
-	panic("implement me")
+	tx, err := service.db.Begin()
+	if err != nil {
+		return nil, err
+	}
+	defer helper.CommitOrRollback(tx)
+
+	billsResponse, err := service.transactionRepository.GetAll(ctx, tx)
+	if err != nil {
+		return nil, err
+	}
+
+	return billsResponse, nil
 }
