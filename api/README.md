@@ -4,7 +4,7 @@
 
 Setelah menyelesaikan pembelajaran tentang Go API, Anda ditugaskan oleh manajemen Enigma Laundry (EL) untuk membuat sebuah aplikasi sederhana berbasis API untuk mencatat transaksi di tokonya.
 
-![logo](./asset/Enigma-Laundry.png)
+![logo](Enigma-Laundry.png)
 
 Fitur-fitur yang diminta oleh manajemen EL adalah:
 
