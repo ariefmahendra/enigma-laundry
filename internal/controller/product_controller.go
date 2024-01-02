@@ -43,18 +43,14 @@ func (controller *ProductControllerImpl) CreateProduct(ctx *gin.Context) {
 }
 
 func (controller *ProductControllerImpl) UpdateProduct(ctx *gin.Context) {
-	var (
-		productUpdate dto.ProductRequest
-		id            int
-	)
+	var productUpdate dto.ProductRequest
+
 	productId := ctx.Param("id")
-	id, err := strconv.Atoi(productId)
-	helper.PanicIfError(err)
 
-	err = ctx.BindJSON(&productUpdate)
-	helper.PanicIfError(err)
+	productUpdate.Id = productId
 
-	productUpdate.Id = id
+	err := ctx.BindJSON(&productUpdate)
+	helper.PanicIfError(err)
 
 	productResponse, err := controller.productService.Update(ctx, productUpdate)
 	helper.PanicIfError(err)

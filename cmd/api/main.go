@@ -33,8 +33,8 @@ func main() {
 	productController := controller.NewProductController(productService)
 
 	// initialize transaction
-	transactionRepository := repository.NewTransactionRepository()
-	transactionService := service.NewTransactionService(transactionRepository, productRepository, initDB)
+	transactionRepository := repository.NewTransactionRepository(initDB)
+	transactionService := service.NewTransactionService(transactionRepository, productRepository)
 	transactionController := controller.NewTransactionController(transactionService)
 
 	handler := router.NewRouter(CustomerController, employeeController, productController, transactionController)

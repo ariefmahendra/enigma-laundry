@@ -6,20 +6,29 @@ import (
 	"enigma-laundry/internal/model/domain"
 	"enigma-laundry/internal/model/dto"
 	"fmt"
+	"strconv"
 )
 
 type TransactionRepository interface {
+	InitTransaction() (*sql.Tx, error)
 	InsertBill(ctx context.Context, tx *sql.Tx, bill domain.TxBill) (domain.TxBill, error)
 	InsertBillDetail(ctx context.Context, tx *sql.Tx, billDetail []domain.TxBillDetail) ([]domain.TxBillDetail, error)
 	GetById(ctx context.Context, tx *sql.Tx, id string) (dto.GetBillByIdResponse, error)
-	GetAll(ctx context.Context, tx *sql.Tx) ([]dto.GetBillByIdResponse, error)
+	GetAll(ctx context.Context, tx *sql.Tx) ([]domain.Bill, error)
 }
 
 type TransactionRepositoryImpl struct {
+	db *sql.DB
 }
 
-func NewTransactionRepository() TransactionRepository {
-	return &TransactionRepositoryImpl{}
+func NewTransactionRepository(db *sql.DB) TransactionRepository {
+	return &TransactionRepositoryImpl{
+		db: db,
+	}
+}
+
+func (repository *TransactionRepositoryImpl) InitTransaction() (*sql.Tx, error) {
+	return repository.db.Begin()
 }
 
 func (repository *TransactionRepositoryImpl) InsertBill(ctx context.Context, tx *sql.Tx, bill domain.TxBill) (domain.TxBill, error) {
@@ -75,6 +84,9 @@ func (repository *TransactionRepositoryImpl) GetById(ctx context.Context, tx *sq
 	`
 
 	err := tx.QueryRowContext(ctx, sqlFindBill, id).Scan(&bill.Id, &bill.BillDate, &bill.EntryDate, &bill.FinishDate, &bill.TotalBill, &customer.Id, &customer.Name, &customer.PhoneNumber, &customer.Address, &employee.Id, &employee.Name, &employee.PhoneNumber, &employee.Address)
+	if err != nil {
+		return dto.GetBillByIdResponse{}, err
+	}
 
 	sqlFindBillDetail := `
 		select bd.id, bd.bill_id, bd.quantity, bd.product_price, p.id, p.name, p.unit, p.price
@@ -102,8 +114,9 @@ func (repository *TransactionRepositoryImpl) GetById(ctx context.Context, tx *sq
 			return dto.GetBillByIdResponse{}, err
 		}
 
+		productId := strconv.Itoa(product.Id)
 		detail.Product = dto.ProductResponse{
-			Id:    product.Id,
+			Id:    productId,
 			Name:  product.Name,
 			Unit:  product.Unit,
 			Price: product.Price,
@@ -112,11 +125,16 @@ func (repository *TransactionRepositoryImpl) GetById(ctx context.Context, tx *sq
 		billDetail = append(billDetail, detail)
 	}
 
+	billId := strconv.Itoa(bill.Id)
+	billDate := bill.BillDate.Format("02-01-2006")
+	entryDate := bill.EntryDate.Format("02-01-2006")
+	finishDate := bill.FinishDate.Format("02-01-2006")
+
 	billResponse := dto.GetBillByIdResponse{
-		Id:         bill.Id,
-		BillDate:   bill.BillDate,
-		EntryDate:  bill.EntryDate,
-		FinishDate: bill.FinishDate,
+		Id:         billId,
+		BillDate:   billDate,
+		EntryDate:  entryDate,
+		FinishDate: finishDate,
 		Employee:   employee,
 		Customer:   customer,
 		BillDetail: billDetail,
@@ -127,7 +145,7 @@ func (repository *TransactionRepositoryImpl) GetById(ctx context.Context, tx *sq
 
 }
 
-func (repository *TransactionRepositoryImpl) GetAll(ctx context.Context, tx *sql.Tx) ([]dto.GetBillByIdResponse, error) {
+func (repository *TransactionRepositoryImpl) GetAll(ctx context.Context, tx *sql.Tx) ([]domain.Bill, error) {
 	sqlGetAllBill := `
 	select b.id, b.bill_date, b.entry_date, b.finish_date, b.total_bill, c.id, c.name, c.phone_number, c.address, 
 	e.id, e.name, e.phone_number, e.address
@@ -145,18 +163,19 @@ func (repository *TransactionRepositoryImpl) GetAll(ctx context.Context, tx *sql
 		return nil, err
 	}
 
-	var bills []dto.GetBillByIdResponse
+	var bills []domain.Bill
 	for rowsBill.Next() {
-		var bill dto.GetBillByIdResponse
-		var customer dto.CustomerResponse
-		var employee dto.EmployeeResponse
+		var bill domain.Bill
+		var customer domain.Customer
+		var employee domain.Employee
 
 		err := rowsBill.Scan(&bill.Id, &bill.BillDate, &bill.EntryDate, &bill.FinishDate, &bill.TotalBill, &customer.Id, &customer.Name, &customer.PhoneNumber, &customer.Address, &employee.Id, &employee.Name, &employee.PhoneNumber, &employee.Address)
 
 		if err != nil {
 			return nil, err
 		}
-		bill = dto.GetBillByIdResponse{
+
+		bill = domain.Bill{
 			Id:         bill.Id,
 			BillDate:   bill.BillDate,
 			EntryDate:  bill.EntryDate,
@@ -184,11 +203,11 @@ func (repository *TransactionRepositoryImpl) GetAll(ctx context.Context, tx *sql
 			return nil, err
 		}
 
-		var billDetails []dto.GetBillDetailByIdResponse
+		var billDetails []domain.BillDetail
 		for rowsBillDetail.Next() {
 			var (
-				billDetail dto.GetBillDetailByIdResponse
-				product    dto.ProductResponse
+				billDetail domain.BillDetail
+				product    domain.Product
 			)
 
 			err := rowsBillDetail.Scan(&billDetail.Id, &billDetail.BillId, &billDetail.Quantity, &billDetail.ProductPrice, &product.Id, &product.Name, &product.Unit, &product.Price)

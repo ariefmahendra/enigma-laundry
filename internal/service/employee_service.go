@@ -7,6 +7,7 @@ import (
 	"enigma-laundry/internal/model/dto"
 	"enigma-laundry/internal/repository"
 	"fmt"
+	"strconv"
 )
 
 type EmployeeService interface {
@@ -41,8 +42,13 @@ func (service *EmployeeServiceImpl) Create(ctx context.Context, employeeRequest 
 }
 
 func (service *EmployeeServiceImpl) Update(ctx context.Context, employeeRequest dto.EmployeeUpdateRequest) (dto.EmployeeResponse, error) {
+	employeeId, err := strconv.Atoi(employeeRequest.Id)
+	if err != nil {
+		return dto.EmployeeResponse{}, err
+	}
+
 	employee := domain.Employee{
-		Id:          employeeRequest.Id,
+		Id:          employeeId,
 		Name:        employeeRequest.Name,
 		PhoneNumber: employeeRequest.PhoneNumber,
 		Address:     employeeRequest.Address,

@@ -3,11 +3,13 @@ package helper
 import (
 	"enigma-laundry/internal/model/domain"
 	"enigma-laundry/internal/model/dto"
+	"strconv"
 )
 
 func CustomerToResponse(customer domain.Customer) dto.CustomerResponse {
+	customerId := strconv.Itoa(customer.Id)
 	return dto.CustomerResponse{
-		Id:          customer.Id,
+		Id:          customerId,
 		Name:        customer.Name,
 		PhoneNumber: customer.PhoneNumber,
 		Address:     customer.Address,
@@ -26,8 +28,9 @@ func CustomerToResponses(customers []domain.Customer) []dto.CustomerResponse {
 }
 
 func EmployeeToResponse(employee domain.Employee) dto.EmployeeResponse {
+	employeeId := strconv.Itoa(employee.Id)
 	return dto.EmployeeResponse{
-		Id:          employee.Id,
+		Id:          employeeId,
 		Name:        employee.Name,
 		PhoneNumber: employee.PhoneNumber,
 		Address:     employee.Address,
@@ -44,8 +47,9 @@ func EmployeeToResponses(employees []domain.Employee) []dto.EmployeeResponse {
 }
 
 func ProductToResponse(product domain.Product) dto.ProductResponse {
+	productId := strconv.Itoa(product.Id)
 	return dto.ProductResponse{
-		Id:    product.Id,
+		Id:    productId,
 		Name:  product.Name,
 		Unit:  product.Unit,
 		Price: product.Price,

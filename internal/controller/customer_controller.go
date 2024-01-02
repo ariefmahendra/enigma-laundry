@@ -45,18 +45,13 @@ func (controller *CustomerControllerImpl) CreateCustomer(ctx *gin.Context) {
 }
 
 func (controller *CustomerControllerImpl) UpdateCustomer(ctx *gin.Context) {
-	var (
-		customerUpdated dto.CustomerUpdateRequest
-		id              int
-	)
+	var customerUpdated dto.CustomerUpdateRequest
 
 	customerId := ctx.Param("id")
-	id, err := strconv.Atoi(customerId)
-	helper.PanicIfError(err)
 
-	customerUpdated.Id = id
+	customerUpdated.Id = customerId
 
-	err = ctx.BindJSON(&customerUpdated)
+	err := ctx.BindJSON(&customerUpdated)
 	helper.PanicIfError(err)
 
 	customerResponse, err := controller.customerService.Update(ctx, customerUpdated)
@@ -77,6 +72,7 @@ func (controller *CustomerControllerImpl) DeleteCustomer(ctx *gin.Context) {
 	if err != nil {
 		log.Fatal(err)
 	}
+
 	err = controller.customerService.Delete(ctx, id)
 	if err != nil {
 		log.Fatal(err)

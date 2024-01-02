@@ -6,6 +6,7 @@ import (
 	"enigma-laundry/internal/model/domain"
 	"enigma-laundry/internal/model/dto"
 	"enigma-laundry/internal/repository"
+	"strconv"
 )
 
 type CustomerService interface {
@@ -41,14 +42,19 @@ func (service *CustomerServiceImpl) Create(ctx context.Context, customerRequest 
 }
 
 func (service *CustomerServiceImpl) Update(ctx context.Context, customerRequest dto.CustomerUpdateRequest) (dto.CustomerResponse, error) {
+	customerRequestId, err := strconv.Atoi(customerRequest.Id)
+	if err != nil {
+		return dto.CustomerResponse{}, err
+	}
+
 	customer := domain.Customer{
-		Id:          customerRequest.Id,
+		Id:          customerRequestId,
 		Name:        customerRequest.Name,
 		PhoneNumber: customerRequest.PhoneNumber,
 		Address:     customerRequest.Address,
 	}
 
-	customer, err := service.customerRepository.Update(ctx, customer)
+	customer, err = service.customerRepository.Update(ctx, customer)
 	if err != nil {
 		return dto.CustomerResponse{}, err
 	}

@@ -1,10 +1,12 @@
 package domain
 
+import "time"
+
 type TxBill struct {
 	Id         int
-	BillDate   string
-	EntryDate  string
-	FinishDate string
+	BillDate   time.Time
+	EntryDate  time.Time
+	FinishDate time.Time
 	EmployeeId int
 	CustomerId int
 	TotalBill  int

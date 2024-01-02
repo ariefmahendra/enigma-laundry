@@ -7,14 +7,14 @@ type EmployeeRequest struct {
 }
 
 type EmployeeUpdateRequest struct {
-	Id          int    `json:"id"`
+	Id          string `json:"id"`
 	Name        string `json:"name"`
 	PhoneNumber string `json:"phoneNumber"`
 	Address     string `json:"address"`
 }
 
 type EmployeeResponse struct {
-	Id          int    `json:"id"`
+	Id          string `json:"id"`
 	Name        string `json:"name"`
 	PhoneNumber string `json:"phoneNumber"`
 	Address     string `json:"address"`

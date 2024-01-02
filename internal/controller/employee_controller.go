@@ -47,19 +47,14 @@ func (controller *EmployeeControllerImpl) CreateEmployee(ctx *gin.Context) {
 }
 
 func (controller *EmployeeControllerImpl) UpdateEmployee(ctx *gin.Context) {
-	var (
-		employeeUpdated dto.EmployeeUpdateRequest
-		id              int
-	)
+	var employeeUpdated dto.EmployeeUpdateRequest
 
-	idEmployee := ctx.Param("id")
-	id, err := strconv.Atoi(idEmployee)
+	employeeId := ctx.Param("id")
+
+	employeeUpdated.Id = employeeId
+
+	err := ctx.BindJSON(&employeeUpdated)
 	helper.PanicIfError(err)
-
-	err = ctx.BindJSON(&employeeUpdated)
-	helper.PanicIfError(err)
-
-	employeeUpdated.Id = id
 
 	employeeResponse, err := controller.employeeService.Update(ctx, employeeUpdated)
 	helper.PanicIfError(err)

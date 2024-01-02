@@ -6,6 +6,7 @@ import (
 	"enigma-laundry/internal/model/domain"
 	"enigma-laundry/internal/model/dto"
 	"enigma-laundry/internal/repository"
+	"strconv"
 )
 
 type ProductService interface {
@@ -41,8 +42,13 @@ func (service *ProductServiceImpl) Create(ctx context.Context, request dto.Produ
 }
 
 func (service *ProductServiceImpl) Update(ctx context.Context, request dto.ProductRequest) (dto.ProductResponse, error) {
+	productId, err := strconv.Atoi(request.Id)
+	if err != nil {
+		return dto.ProductResponse{}, err
+	}
+
 	product := domain.Product{
-		Id:    request.Id,
+		Id:    productId,
 		Name:  request.Name,
 		Unit:  request.Unit,
 		Price: request.Price,
